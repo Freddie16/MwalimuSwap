@@ -1,0 +1,23 @@
+{% load static %}
+
+<header class="top-nav">
+    <div class="left-items">
+        </div>
+    <div class="right-items">
+        <div class="user-profile">
+            {% if user.is_authenticated %}
+                <span class="user-name">{{ user.full_name|default:user.username }}</span>
+                <a href="{% url 'profile_detail' %}" class="profile-icon">
+                    {% if user.profile_picture %}
+                        <img src="{{ user.profile_picture.url }}" alt="Profile Picture">
+                    {% else %}
+                        <i class="fas fa-user"></i>
+                    {% endif %}
+                </a>
+            {% else %}
+                <a href="{% url 'login' %}" class="btn btn-primary btn-sm">Login</a>
+                <a href="{% url 'signup' %}" class="btn btn-secondary btn-sm">Sign Up</a>
+            {% endif %}
+        </div>
+    </div>
+</header>

@@ -1,0 +1,161 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Complete Profile - Step 2{% endblock %}
+
+{% block content %}
+<div class="main-content p-6 flex items-center justify-center min-h-screen-minus-nav">
+    <div class="dashboard-card max-w-md mx-auto p-8 text-center">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">Complete Your Profile (2/4)</h2>
+        <p class="text-gray-600 mb-6">Provide your school details.</p>
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div class="form-group">
+                {{ form.school_type|as_crispy_field }}
+            </div>
+
+            <div class="form-group">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Subjects Taught</label>
+                <div class="custom-multiselect relative">
+                    <div class="selected-items flex flex-wrap gap-2 p-2 border rounded-md cursor-pointer"></div>
+                    <div class="dropdown-container absolute hidden w-full bg-white border rounded-md shadow-lg mt-1 max-h-60 overflow-y-auto z-50">
+                        <div class="subjects-list p-2">
+                            <!-- Subject options go here -->
+                        </div>
+                    </div>
+                    <div style="display: none;">
+                        {{ form.subjects }}
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary w-full rounded-md mt-4">
+                <i class="fas fa-arrow-right mr-2"></i> Next: Current Location
+            </button>
+        </form>
+    </div>
+</div>
+
+<style>
+.custom-multiselect .selected-items {
+    min-height: 44px;
+}
+
+.remove-item {
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.dropdown-container {
+    z-index: 50;
+}
+
+.subjects-list div {
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.subjects-list div:hover {
+    background-color: #f3f4f6;
+}
+
+.subjects-list div.selected {
+    background-color: #e5e7eb;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const schoolTypeSelect = document.getElementById('id_school_type');
+    const subjectsField = document.getElementById('id_subjects');
+    const selectedItemsContainer = document.querySelector('.selected-items');
+    const subjectsList = document.querySelector('.subjects-list');
+    const dropdownContainer = document.querySelector('.dropdown-container');
+
+    // 🔥 Replace this line in your view with: context['subject_json'] = json.dumps(SUBJECT_CHOICES)
+    const subjectChoices = JSON.parse('{{ subject_json|escapejs }}');
+
+
+    function updateSubjects() {
+        const schoolType = schoolTypeSelect.value;
+        subjectsList.innerHTML = '';
+
+        if (subjectChoices[schoolType]) {
+            subjectChoices[schoolType].forEach(([value, label]) => {
+                const subjectDiv = document.createElement('div');
+                subjectDiv.textContent = label;
+                subjectDiv.dataset.value = value;
+
+                if (Array.from(subjectsField.options).some(opt => opt.value === value)) {
+                    subjectDiv.classList.add('selected');
+                }
+
+                subjectDiv.addEventListener('click', function () {
+                    const existingOption = Array.from(subjectsField.options).find(opt => opt.value === value);
+                    if (existingOption) {
+                        existingOption.remove();
+                        this.classList.remove('selected');
+                    } else {
+                        const newOption = document.createElement('option');
+                        newOption.value = value;
+                        newOption.textContent = label;
+                        newOption.selected = true;
+                        subjectsField.appendChild(newOption);
+                        this.classList.add('selected');
+                    }
+                    updateSelectedDisplay();
+                });
+
+                subjectsList.appendChild(subjectDiv);
+            });
+        }
+    }
+
+    function updateSelectedDisplay() {
+        selectedItemsContainer.innerHTML = '';
+        Array.from(subjectsField.selectedOptions).forEach(option => {
+            const span = document.createElement('span');
+            span.className = 'selected-item bg-blue-100 text-blue-800 text-sm px-2 py-1 rounded-full flex items-center';
+            span.innerHTML = `
+                ${option.textContent}
+                <span class="remove-item ml-2 hover:text-blue-500">×</span>
+            `;
+
+            span.querySelector('.remove-item').addEventListener('click', (e) => {
+                e.stopPropagation();
+                option.remove();
+                updateSubjects();
+                updateSelectedDisplay();
+            });
+
+            selectedItemsContainer.appendChild(span);
+        });
+    }
+
+    selectedItemsContainer.addEventListener('click', function (e) {
+        if (!e.target.closest('.remove-item')) {
+            dropdownContainer.classList.toggle('hidden');
+        }
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!e.target.closest('.custom-multiselect')) {
+            dropdownContainer.classList.add('hidden');
+        }
+    });
+
+    schoolTypeSelect.addEventListener('change', () => {
+        updateSubjects();
+        updateSelectedDisplay();
+    });
+
+    // Initial population
+    updateSubjects();
+    updateSelectedDisplay();
+});
+</script>
+{% endblock %}

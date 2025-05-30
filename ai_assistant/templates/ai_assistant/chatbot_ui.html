@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}AI Chatbot Support{% endblock %}
+
+{% block content %}
+<div class="main-content p-6">
+    <div class="dashboard-card max-w-3xl mx-auto h-[70vh] flex flex-col">
+        <h1 class="text-2xl font-semibold text-gray-800 mb-4 text-center">AI Chatbot Support</h1>
+
+        <div id="chat-window" class="flex-grow overflow-y-auto p-4 border border-gray-200 rounded-md bg-gray-50 mb-4 space-y-4">
+            {% for message in chat_history %}
+                {% if message.message_type == 'USER' %}
+                    <div class="flex justify-end">
+                        <div class="bg-indigo-500 text-white rounded-lg p-3 max-w-[70%] shadow-md">
+                            {{ message.content }}
+                        </div>
+                    </div>
+                {% else %}
+                    <div class="flex justify-start">
+                        <div class="bg-gray-200 text-gray-800 rounded-lg p-3 max-w-[70%] shadow-md">
+                            {{ message.content }}
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+
+        <form id="chat-form" method="post" class="flex items-center">
+            {% csrf_token %}
+            {{ form.message|as_crispy_field }}
+            <button type="submit" class="btn btn-primary ml-2 px-6 py-3 rounded-md">
+                <i class="fas fa-paper-plane mr-2"></i> Send
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const chatWindow = document.getElementById('chat-window');
+        const chatForm = document.getElementById('chat-form');
+        const messageInput = document.getElementById('id_message');
+
+        // Scroll to the bottom of the chat window on load
+        chatWindow.scrollTop = chatWindow.scrollHeight;
+
+        chatForm.addEventListener('submit', function(e) {
+            e.preventDefault(); // Prevent default form submission
+
+            const userMessage = messageInput.value.trim();
+            if (userMessage === '') {
+                return; // Don't send empty messages
+            }
+
+            // Display user message immediately
+            appendMessage(userMessage, 'USER');
+            messageInput.value = ''; // Clear input field
+            chatWindow.scrollTop = chatWindow.scrollHeight; // Scroll to bottom
+
+            // Show a loading indicator
+            const loadingIndicator = appendMessage('Typing...', 'AI loading');
+            chatWindow.scrollTop = chatWindow.scrollHeight;
+
+            // Send message to backend via AJAX
+            fetch("{% url 'ai_assistant:ai_assistant_chatbot' %}", {
+
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                    'X-Requested-With': 'XMLHttpRequest' // Identify as AJAX request
+                },
+                body: JSON.stringify({ message: userMessage })
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Remove loading indicator
+                if (loadingIndicator && loadingIndicator.parentNode) {
+                    loadingIndicator.parentNode.removeChild(loadingIndicator);
+                }
+                appendMessage(data.message, 'AI');
+                chatWindow.scrollTop = chatWindow.scrollHeight; // Scroll to bottom after AI response
+            })
+            .catch(error => {
+                console.error('Error sending message:', error);
+                if (loadingIndicator && loadingIndicator.parentNode) {
+                    loadingIndicator.parentNode.removeChild(loadingIndicator);
+                }
+                appendMessage("Sorry, I'm having trouble connecting to the AI. Please try again.", 'AI');
+                chatWindow.scrollTop = chatWindow.scrollHeight;
+            });
+        });
+
+        function appendMessage(text, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex ${type === 'USER' ? 'justify-end' : 'justify-start'}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = `rounded-lg p-3 max-w-[70%] shadow-md ${
+                type === 'USER' ? 'bg-indigo-500 text-white' :
+                type === 'AI' ? 'bg-gray-200 text-gray-800' :
+                'bg-gray-300 text-gray-600 italic' // For loading indicator
+            }`;
+            contentDiv.textContent = text;
+            
+            messageDiv.appendChild(contentDiv);
+            chatWindow.appendChild(messageDiv);
+
+            return messageDiv; // Return the message div for potential removal (e.g., loading indicator)
+        }
+    });
+</script>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+{% endblock %}

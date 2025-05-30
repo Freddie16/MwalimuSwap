@@ -1,0 +1,306 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Complete Profile - Step 3{% endblock %}
+
+{% block content %}
+<div class="container mx-auto p-4 max-w-lg">
+  <h2 class="text-2xl font-semibold text-gray-800 mb-6 text-center">
+    Step 3: Your Current Location
+  </h2>
+  
+  <form method="post" class="space-y-4" onsubmit="return checkLocationFields();">
+  {% csrf_token %}
+
+  {# Show form errors if any #}
+  {% if form.errors %}
+    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+      <strong class="font-bold">Error:</strong>
+      <ul class="mt-2 list-disc list-inside text-sm">
+        {% for field in form %}
+          {% for error in field.errors %}
+            <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+          {% endfor %}
+        {% endfor %}
+        {% for error in form.non_field_errors %}
+          <li>{{ error }}</li>
+        {% endfor %}
+      </ul>
+    </div>
+  {% endif %}
+
+  <div class="form-group">
+    <label for="id_current_county" class="block text-sm font-medium text-gray-700">Current County</label>
+    {{ form.current_county }}
+  </div>
+  <div class="form-group">
+    <label for="id_current_subcounty" class="block text-sm font-medium text-gray-700">Current Sub-county</label>
+    {{ form.current_subcounty }}
+  </div>
+  <div class="form-group">
+    <label for="id_current_ward" class="block text-sm font-medium text-gray-700">Current Ward</label>
+    {{ form.current_ward }}
+  </div>
+
+  <button type="submit" class="btn btn-primary w-full rounded-md mt-4">
+    Next: Swap To Location
+  </button>
+</form>
+
+</div>
+<style>
+  .select-wrapper {
+    position: relative;
+    width: 100%;
+  }
+  .dropdown-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    background-color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease; /* Smooth transition for visual feedback */
+  }
+  .dropdown-toggle .dropdown-arrow {
+    transition: transform 0.2s ease; /* Rotate arrow on toggle */
+  }
+  .select-wrapper.open .dropdown-toggle .dropdown-arrow {
+    transform: rotate(180deg); /* Rotate arrow downward when open */
+  }
+  .select-wrapper .dropdown-menu {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background-color: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+  }
+  .select-wrapper.open .dropdown-menu {
+    display: block !important;
+  }
+  .dropdown-item {
+    padding: 0.5rem 1rem;
+    cursor: pointer;
+  }
+  .dropdown-item:hover {
+    background-color: #f3f4f6;
+  }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM fully loaded - initializing custom dropdowns for Step 3');
+
+    function createCustomDropdown(selectElement) {
+        if (!selectElement) {
+            console.error('Select element not found:', selectElement);
+            return null;
+        }
+
+        console.log('Creating custom dropdown for:', selectElement.id);
+
+        const wrapper = document.createElement('div');
+        wrapper.className = 'select-wrapper';
+        
+        const toggle = document.createElement('div');
+        toggle.className = 'dropdown-toggle';
+        toggle.innerHTML = `
+            <span class="selected-value">${selectElement.selectedOptions[0]?.text || 'Select...'}</span>
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+            </svg>
+        `;
+
+        const menu = document.createElement('div');
+        menu.className = 'dropdown-menu';
+
+        selectElement.parentNode.insertBefore(wrapper, selectElement);
+        wrapper.appendChild(toggle);
+        wrapper.appendChild(menu);
+        wrapper.appendChild(selectElement);
+        selectElement.style.display = 'none';
+
+        function updateDropdown() {
+            console.log('Updating dropdown menu for:', selectElement.id);
+            menu.innerHTML = '';
+            Array.from(selectElement.options).forEach(option => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item';
+                item.textContent = option.text;
+                if (option.selected) item.style.backgroundColor = '#e5e7eb';
+                
+                item.addEventListener('click', (e) => {
+                    console.log('Item selected:', option.text);
+                    selectElement.value = option.value;
+                    Array.from(selectElement.options).forEach(opt => {
+                    opt.selected = opt.value === option.value;
+                });
+                    toggle.querySelector('.selected-value').textContent = option.text;
+                    menu.querySelectorAll('.dropdown-item').forEach(i => i.style.backgroundColor = '');
+                    item.style.backgroundColor = '#e5e7eb';
+                    wrapper.classList.remove('open'); // Close dropdown after selection
+                    selectElement.dispatchEvent(new Event('change')); // Trigger change event
+                });
+                
+                menu.appendChild(item);
+            });
+        }
+
+        toggle.addEventListener('click', (e) => {
+            console.log('Toggle clicked for:', selectElement.id);
+            e.preventDefault();
+            e.stopPropagation();
+            wrapper.classList.toggle('open');
+            console.log('Wrapper class list after toggle:', wrapper.className);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (!wrapper.contains(e.target)) {
+                console.log('Clicked outside - closing dropdown for:', selectElement.id);
+                wrapper.classList.remove('open');
+            }
+        });
+
+        selectElement.addEventListener('change', updateDropdown);
+        updateDropdown();
+
+        return { update: updateDropdown };
+    }
+
+    const currentCountySelect = document.getElementById('id_current_county');
+    const currentSubcountySelect = document.getElementById('id_current_subcounty');
+    const currentWardSelect = document.getElementById('id_current_ward');
+
+    if (!currentCountySelect || !currentSubcountySelect || !currentWardSelect) {
+        console.error("One or more current location select elements not found.");
+        console.log('Current County Select:', currentCountySelect);
+        console.log('Current Subcounty Select:', currentSubcountySelect);
+        console.log('Current Ward Select:', currentWardSelect);
+        return;
+    }
+
+    console.log('Found all select elements, proceeding to create dropdowns');
+
+    const currentCountyDropdown = createCustomDropdown(currentCountySelect);
+    const currentSubcountyDropdown = createCustomDropdown(currentSubcountySelect);
+    const currentWardDropdown = createCustomDropdown(currentWardSelect);
+
+    if (!currentCountyDropdown || !currentSubcountyDropdown || !currentWardDropdown) {
+        console.error("Failed to create one or more custom dropdowns.");
+        return;
+    }
+
+    console.log('Custom dropdowns created successfully');
+
+    const initialCurrentSubcountyId = "{{ form.instance.current_subcounty.id|default_if_none:'' }}";
+    const initialCurrentWardId = "{{ form.instance.current_ward.id|default_if_none:'' }}";
+
+    function loadCurrentSubcounties(selectedSubcountyId = null) {
+        const countyId = currentCountySelect.value;
+        currentSubcountySelect.innerHTML = '<option value="">Select your Current Sub-county</option>';
+        currentWardSelect.innerHTML = '<option value="">Select your Current Ward</option>';
+
+        if (countyId) {
+            console.log('Fetching subcounties for county ID:', countyId);
+            fetch(`/users/ajax/get-subcounties/?county_id=${countyId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Error fetching subcounties:', data.error);
+                        return;
+                    }
+                    console.log('Subcounties fetched:', data.subcounties);
+                    data.subcounties.forEach(subcounty => {
+                        const option = document.createElement('option');
+                        option.value = subcounty.id;
+                        option.textContent = subcounty.name;
+                        currentSubcountySelect.appendChild(option);
+                    });
+                    if (selectedSubcountyId) currentSubcountySelect.value = selectedSubcountyId;
+                    currentSubcountyDropdown.update(); // Update the custom dropdown
+                    loadCurrentWards(initialCurrentWardId);
+                })
+                .catch(error => console.error('Error loading current subcounties:', error));
+        } else {
+            currentSubcountyDropdown.update();
+            currentWardDropdown.update();
+        }
+    }
+
+    function loadCurrentWards(selectedWardId = null) {
+        const subcountyId = currentSubcountySelect.value;
+        currentWardSelect.innerHTML = '<option value="">Select your Current Ward</option>';
+
+        if (subcountyId) {
+            console.log('Fetching wards for subcounty ID:', subcountyId);
+            fetch(`/users/ajax/get-wards/?subcounty_id=${subcountyId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.error) {
+                        console.error('Error fetching wards:', data.error);
+                        return;
+                    }
+                    console.log('Wards fetched:', data.wards);
+                    data.wards.forEach(ward => {
+                        const option = document.createElement('option');
+                        option.value = ward.id;
+                        option.textContent = ward.name;
+                        currentWardSelect.appendChild(option);
+                    });
+                    if (selectedWardId) currentWardSelect.value = selectedWardId;
+                    currentWardDropdown.update(); // Update the custom dropdown
+                })
+                .catch(error => console.error('Error loading current wards:', error));
+        } else {
+            currentWardDropdown.update();
+        }
+    }
+
+    currentCountySelect.addEventListener('change', () => {
+        console.log('County changed to:', currentCountySelect.value);
+        loadCurrentSubcounties(null);
+    });
+
+    currentSubcountySelect.addEventListener('change', () => {
+        console.log('Subcounty changed to:', currentSubcountySelect.value);
+        loadCurrentWards(null);
+    });
+
+    if (currentCountySelect.value) {
+        console.log('Initial county value:', currentCountySelect.value);
+        loadCurrentSubcounties(initialCurrentSubcountyId);
+    } else {
+        currentSubcountyDropdown.update();
+        currentWardDropdown.update();
+    }
+    function checkLocationFields() {
+  const county = document.getElementById("id_current_county").value;
+  const subcounty = document.getElementById("id_current_subcounty").value;
+  const ward = document.getElementById("id_current_ward").value;
+
+  console.log("County:", county);
+  console.log("Subcounty:", subcounty);
+  console.log("Ward:", ward);
+
+  if (!county || !subcounty || !ward) {
+    alert("Please select County, Sub-county and Ward.");
+    return false;
+  }
+  return true;
+}
+
+
+});
+</script>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Billing History{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="main-content p-6">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6">My Payment History</h1>
+    <div class="dashboard-card">
+        {% if payments %}
+        <div class="overflow-x-auto">
+            <table class="min-w-full bg-white rounded-lg shadow-md">
+                <thead class="bg-gray-200">
+                    <tr>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Date</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Description</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Amount (KES)</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Method</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Transaction ID / Code</th>
+                        <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200">
+                    {% for payment in payments %}
+                    <tr class="hover:bg-gray-50">
+                        <td class="py-3 px-4 whitespace-nowrap">{{ payment.paid_at|default:payment.created_at|date:"M d, Y H:i" }}</td>
+                        <td class="py-3 px-4 whitespace-nowrap">
+                            Payment for Swap Connection
+                            {% if payment.swap_request %}
+                                (ID: <a href="{% url 'swaps:swap_detail' payment.swap_request.id %}" class="text-indigo-600 hover:underline">{{ payment.swap_request.id }}</a>)
+                            {% else %}
+                                (Swap N/A)
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-4 whitespace-nowrap">{{ payment.amount|floatformat:2 }}</td>
+                        <td class="py-3 px-4 whitespace-nowrap">{{ payment.get_payment_method_display }}</td>
+                        <td class="py-3 px-4 whitespace-nowrap">
+                            {% if payment.payment_method == 'MPESA' %}
+                                {{ payment.mpesa_receipt_number|default:"N/A" }}
+                                {% if payment.mpesa_checkout_request_id and not payment.mpesa_receipt_number %} (Ref: {{ payment.mpesa_checkout_request_id }}) {% endif %}
+                            {% elif payment.payment_method == 'PAYPAL' %}
+                                {{ payment.paypal_transaction_id|default:payment.paypal_order_id|default:"N/A" }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </td>
+                        <td class="py-3 px-4 whitespace-nowrap">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                                {% if payment.status == 'COMPLETED' %}bg-green-100 text-green-800
+                                {% elif payment.status == 'PENDING' %}bg-yellow-100 text-yellow-800
+                                {% elif payment.status == 'FAILED' %}bg-red-100 text-red-800
+                                {% elif payment.status == 'REFUNDED' %}bg-blue-100 text-blue-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ payment.get_status_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+            {% if is_paginated %}
+                <div class="mt-6">
+                    {% include 'partials/_pagination.html' %} {# Make sure this partial exists and works #}
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="text-center py-8">
+                <i class="fas fa-file-invoice-dollar fa-3x text-gray-400 mb-3"></i>
+                <p class="text-gray-600">You have no payment history yet.</p>
+                <p class="text-sm text-gray-500 mt-1">Payments for unlocking matched swap details will appear here.</p>
+                 <a href="{% url 'swaps:dashboard' %}" class="btn btn-secondary mt-4">Back to Dashboard</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Complete Payment for Swap Connection{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+<style>
+    /* Additional styling if needed */
+    .payment-method-label {
+        display: flex;
+        align-items: center;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        cursor: pointer;
+    }
+    .payment-method-label input[type="radio"] {
+        margin-right: 10px;
+    }
+    .payment-method-label:hover {
+        background-color: #f9f9f9;
+    }
+    .payment-method-label.selected {
+        border-color: #007bff;
+        background-color: #e7f3ff;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content p-6">
+    <div class="dashboard-card max-w-lg mx-auto">
+        <h1 class="text-2xl font-semibold text-gray-800 mb-4 text-center">Unlock Matched Teacher Details</h1>
+        
+        <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 mb-6 rounded-md shadow-sm" role="alert">
+            <p class="font-bold">Almost there!</p>
+            <p>You've been matched with another teacher. To view their contact details and proceed with the swap, a one-time payment of <strong>KSh {{ payment_amount }}</strong> is required.</p>
+            <p class="mt-2">This payment is for Swap Request ID: <strong>{{ swap_request.id }}</strong>.</p>
+            <p>Your match is interested in swapping from/to: <strong>{{ swap_request.matched_with_request.desired_ward.name|default:swap_request.matched_with_request.desired_subcounty.name|default:swap_request.matched_with_request.desired_county.name|default:"N/A" }}</strong>.</p>
+        </div>
+
+        {% if form.errors %}
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                <strong class="font-bold">Error!</strong>
+                <span class="block sm:inline">Please correct the errors below.</span>
+                <ul>
+                {% for field, errors in form.errors.items %}
+                    {% for error in errors %}
+                        <li>{{ field|capfirst }}: {{ error }}</li>
+                    {% endfor %}
+                {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+
+        <form method="post" id="paymentForm">
+            {% csrf_token %}
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">Choose Payment Method:</label>
+                {% for radio in form.payment_method %}
+                <label class="payment-method-label block" for="{{ radio.id_for_label }}">
+                    {{ radio.tag }} 
+                    <span class="ml-2 text-gray-700 font-medium">{{ radio.choice_label }}</span>
+                     {% if radio.choice_label == "M-Pesa" %}
+                        <i class="fas fa-mobile-alt ml-auto text-green-500"></i>
+                    {% elif radio.choice_label == "PayPal" %}
+                        <i class="fab fa-paypal ml-auto text-blue-600"></i>
+                    {% endif %}
+                </label>
+                {% endfor %}
+            </div>
+
+            <div id="mpesa-phone-number-field" class="mb-4" style="display: none;">
+                {{ form.mpesa_phone_number|as_crispy_field }}
+            </div>
+            
+            <div id="paypal-instructions" class="mb-4 p-3 bg-gray-100 rounded-md" style="display: none;">
+                <p class="text-sm text-gray-700">You will be redirected to PayPal to complete your payment securely.</p>
+            </div>
+
+            <button type="submit" id="proceedToPaymentBtn" class="btn btn-success w-full rounded-md mt-6">
+                Proceed to Payment
+            </button>
+        </form>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const paymentMethodRadios = document.querySelectorAll('input[name="payment_method"]');
+    const mpesaPhoneNumberField = document.getElementById('mpesa-phone-number-field');
+    const paypalInstructions = document.getElementById('paypal-instructions');
+    const paymentLabels = document.querySelectorAll('.payment-method-label');
+    const proceedButton = document.getElementById('proceedToPaymentBtn');
+
+    function togglePaymentFields() {
+        const selectedMethod = document.querySelector('input[name="payment_method"]:checked');
+        paymentLabels.forEach(label => label.classList.remove('selected'));
+
+        if (selectedMethod) {
+            const selectedLabel = selectedMethod.closest('.payment-method-label');
+            if (selectedLabel) {
+                selectedLabel.classList.add('selected');
+            }
+
+            if (selectedMethod.value === 'MPESA') {
+                mpesaPhoneNumberField.style.display = 'block';
+                paypalInstructions.style.display = 'none';
+                proceedButton.innerHTML = '<i class="fas fa-mobile-alt mr-2"></i> Pay with M-Pesa';
+            } else if (selectedMethod.value === 'PAYPAL') {
+                mpesaPhoneNumberField.style.display = 'none';
+                paypalInstructions.style.display = 'block';
+                 proceedButton.innerHTML = '<i class="fab fa-paypal mr-2"></i> Pay with PayPal';
+            } else {
+                mpesaPhoneNumberField.style.display = 'none';
+                paypalInstructions.style.display = 'none';
+                proceedButton.innerHTML = 'Proceed to Payment';
+            }
+        } else {
+            mpesaPhoneNumberField.style.display = 'none';
+            paypalInstructions.style.display = 'none';
+            proceedButton.innerHTML = 'Proceed to Payment';
+        }
+    }
+
+    paymentMethodRadios.forEach(radio => {
+        radio.addEventListener('change', togglePaymentFields);
+    });
+
+    // Initial call to set up fields based on pre-selection (if any)
+    togglePaymentFields();
+});
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% load swaps_extras %} {# Load your custom template tags #}
+
+{% block title %}Subscription Plans{% endblock %}
+
+{% block content %}
+<div class="main-content p-6">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6 text-center">Choose Your Subscription Plan</h1>
+
+    {% if user_subscription and user_subscription.is_subscription_active %}
+    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6 rounded-md shadow-sm" role="alert">
+        <p class="font-bold">You have an active subscription!</p>
+        <p>Your current plan: <span class="font-semibold">{{ user_subscription.plan.name }}</span>, active until <span class="font-semibold">{{ user_subscription.end_date|date:"M d, Y" }}</span>.</p>
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {% for plan in plans %}
+        <div class="dashboard-card flex flex-col items-center text-center p-6 border-2 border-transparent hover:border-indigo-500 transition duration-300 ease-in-out">
+            <h2 class="text-2xl font-bold text-gray-800 mb-3">{{ plan.name }}</h2>
+            <p class="text-5xl font-extrabold text-indigo-600 mb-4">KSh {{ plan.price|floatformat:0 }}<span class="text-xl text-gray-500">/{{ plan.duration_days }} days</span></p>
+            <p class="text-gray-600 mb-4">{{ plan.description }}</p>
+            <ul class="text-gray-700 text-left w-full mb-6 space-y-2">
+                {# Use the custom 'split_string' filter #}
+                {% for feature in plan.features|split_string:"," %}
+                    <li class="flex items-center">
+                        <i class="fas fa-check-circle text-green-500 mr-2"></i> {{ feature|strip_string }} {# Use custom strip_string #}
+                    </li>
+                {% endfor %}
+            </ul>
+            <div class="mt-auto w-full">
+                {% if user_subscription and user_subscription.plan == plan and user_subscription.is_subscription_active %}
+                    <button class="btn btn-success w-full cursor-not-allowed opacity-75" disabled>
+                        <i class="fas fa-check-circle mr-2"></i> Current Plan
+                    </button>
+                {% else %}
+                    <a href="{% url 'payment_create' %}?plan_id={{ plan.id }}" class="btn btn-primary w-full inline-flex items-center justify-center">
+                        <i class="fas fa-credit-card mr-2"></i> Subscribe Now
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        {% empty %}
+        <p class="col-span-full text-center text-gray-600 py-8">No subscription plans available at the moment. Please check back later!</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+{% endblock %}
+
+{% block extra_js %}
+{# Remove the problematic JavaScript String prototypes here #}
+{% endblock %}

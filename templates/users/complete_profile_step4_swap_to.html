@@ -1,0 +1,366 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Complete Profile - Step 4{% endblock %}
+
+{% block content %}
+<div class="main-content p-6 flex items-center justify-center min-h-screen-minus-nav">
+    <div class="dashboard-card max-w-md mx-auto p-8 text-center">
+        <h2 class="text-3xl font-bold text-gray-800 mb-6">Complete Your Profile (4/4)</h2>
+        <p class="text-gray-600 mb-6">Where would you like to swap to?</p>
+
+        <form method="post" action="{% url 'users:complete_profile_step4' %}" class="space-y-4" id="step4-form">
+            {% csrf_token %}
+
+            {# Form error display block #}
+            {% if form.errors %}
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+                    <strong class="font-bold">Oops!</strong>
+                    <span class="block sm:inline">Please correct the following errors:</span>
+                    <ul class="mt-2 list-disc list-inside">
+                        {% for field in form %}
+                            {% for error in field.errors %}
+                                <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                            {% endfor %}
+                        {% endfor %}
+                        {% for error in form.non_field_errors %}
+                            <li>{{ error }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+
+            {# Manually render location fields to apply custom dropdown logic #}
+            <div class="form-group">
+                <label for="{{ form.swap_to_county.id_for_label }}" class="block text-gray-700 text-sm font-bold mb-2">{{ form.swap_to_county.label }}</label>
+                <div class="custom-dropdown">
+                    {{ form.swap_to_county }}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.swap_to_subcounty.id_for_label }}" class="block text-gray-700 text-sm font-bold mb-2">{{ form.swap_to_subcounty.label }}</label>
+                <div class="custom-dropdown">
+                    {{ form.swap_to_subcounty }}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="{{ form.swap_to_ward.id_for_label }}" class="block text-gray-700 text-sm font-bold mb-2">{{ form.swap_to_ward.label }}</label>
+                <div class="custom-dropdown">
+                    {{ form.swap_to_ward }}
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-success w-full rounded-md mt-4">
+                <i class="fas fa-check-circle mr-2"></i> Complete Profile
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock content %} {# Explicitly closing content block #}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+<style>
+    .custom-dropdown {
+        position: relative;
+        margin-bottom: 1rem; /* Added for spacing between dropdowns */
+    }
+
+    .custom-dropdown .select-wrapper {
+        position: relative;
+        cursor: pointer;
+    }
+
+    .custom-dropdown .dropdown-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem 1rem;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        background-color: white;
+    }
+
+    .custom-dropdown .dropdown-menu {
+        position: absolute;
+        width: 100%;
+        max-height: 200px;
+        overflow-y: auto;
+        background: white;
+        border: 1px solid #d1d5db;
+        border-radius: 0.375rem;
+        margin-top: 0.5rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        display: none;
+        z-index: 50;
+    }
+
+    .custom-dropdown .dropdown-item {
+        padding: 0.5rem 1rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .custom-dropdown .dropdown-item:hover {
+        background-color: #f3f4f6;
+    }
+
+    .custom-dropdown.open .dropdown-menu {
+        display: block;
+    }
+</style>
+{% endblock extra_head %} {# Explicitly closing extra_head block #}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM fully loaded - initializing custom dropdowns for Step 4');
+
+        // Function to create and manage a custom dropdown
+        function createCustomDropdown(selectElement) {
+            console.log('Creating custom dropdown for:', selectElement.id);
+
+            // Check if selectElement is valid before proceeding
+            if (!selectElement) {
+                console.error('Select element not found:', selectElement);
+                return null; // Return null if element is not found
+            }
+
+            const wrapper = document.createElement('div');
+            wrapper.className = 'select-wrapper';
+            
+            const toggle = document.createElement('div');
+            toggle.className = 'dropdown-toggle';
+            // Set initial text for the toggle
+            toggle.innerHTML = `
+                <span class="selected-value">${selectElement.selectedOptions[0]?.text || 'Select...'}</span>
+                <svg class="w-5 h-5 dropdown-arrow" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            `;
+
+            const menu = document.createElement('div');
+            menu.className = 'dropdown-menu';
+
+            // Find the closest .custom-dropdown parent
+            const customDropdown = selectElement.closest('.custom-dropdown');
+            if (customDropdown) {
+                customDropdown.insertBefore(wrapper, selectElement);
+            } else {
+                // Fallback if .custom-dropdown is not the direct parent
+                selectElement.parentNode.insertBefore(wrapper, selectElement);
+            }
+
+            wrapper.appendChild(toggle);
+            wrapper.appendChild(menu);
+            wrapper.appendChild(selectElement); // Move the original select element inside the wrapper
+            selectElement.style.display = 'none'; // Hide the original select element
+
+            function updateDropdown() {
+                console.log("Updating dropdown menu for:", selectElement.id);
+                menu.innerHTML = '';
+                
+                // CRUCIAL FIX: Explicitly update the displayed selected value in the toggle
+                // This ensures the visual display matches the underlying select's current value
+                const selectedOptionText = selectElement.selectedOptions[0]?.text || 'Select...';
+                toggle.querySelector('.selected-value').textContent = selectedOptionText;
+
+                Array.from(selectElement.options).forEach(option => {
+                    const item = document.createElement('div');
+                    item.className = 'dropdown-item';
+                    item.textContent = option.text;
+                    // Highlight selected option in the custom dropdown list
+                    if (option.selected) {
+                        item.style.backgroundColor = '#e5e7eb';
+                    }
+                    
+                    item.addEventListener('click', (e) => {
+                        console.log('Item click event for:', selectElement.id, 'Value:', option.text);
+                        e.preventDefault(); // Prevent default behavior of the div click
+                        e.stopPropagation(); // Stop event bubbling
+
+                        selectElement.value = option.value;
+                        menu.querySelectorAll('.dropdown-item').forEach(i => i.style.backgroundColor = '');
+                        item.style.backgroundColor = '#e5e7eb';
+                        wrapper.classList.remove('open');
+                        if (customDropdown) { // Also remove 'open' from the custom-dropdown parent
+                            customDropdown.classList.remove('open');
+                        }
+                        selectElement.dispatchEvent(new Event('change')); // Trigger change event for Django form handling
+                        console.log('Dropdown closed for:', selectElement.id);
+                    });
+                    
+                    menu.appendChild(item);
+                });
+            }
+
+            toggle.addEventListener('click', (e) => {
+                console.log('Toggle clicked for:', selectElement.id);
+                e.preventDefault(); // Prevent default behavior of the div click
+                e.stopPropagation(); // Stop event bubbling
+
+                wrapper.classList.toggle('open');
+                if (customDropdown) { // Toggle 'open' class on the custom-dropdown parent as well
+                    customDropdown.classList.toggle('open');
+                }
+                console.log('Wrapper class list after toggle:', wrapper.className);
+                if (customDropdown) {
+                    console.log('Custom dropdown class list:', customDropdown.className);
+                }
+                console.log('Dropdown menu display style:', window.getComputedStyle(menu).display);
+            });
+
+            document.addEventListener('click', (e) => {
+                // Check if the click is outside the entire custom dropdown wrapper
+                if (!wrapper.contains(e.target)) {
+                    console.log('Clicked outside - closing dropdown for:', selectElement.id);
+                    wrapper.classList.remove('open');
+                    if (customDropdown) {
+                        customDropdown.classList.remove('open');
+                    }
+                }
+            });
+
+            selectElement.addEventListener('change', updateDropdown); // Listen to changes on the original select
+            updateDropdown(); // Initial population of the custom dropdown
+
+            return { update: updateDropdown }; // Return an object with an update method
+        }
+
+        const swapToCountySelect = document.getElementById('id_swap_to_county');
+        const swapToSubcountySelect = document.getElementById('id_swap_to_subcounty');
+        const swapToWardSelect = document.getElementById('id_swap_to_ward');
+
+        // IMMEDIATE EXIT if any required element is not found.
+        if (!swapToCountySelect || !swapToSubcountySelect || !swapToWardSelect) {
+            console.error("One or more swap-to location select elements not found. Dynamic dropdowns will not function.");
+            return; // Crucial: Stop execution here if elements are missing
+        }
+
+        console.log('Found all select elements, proceeding to create dropdowns');
+
+        // Initialize custom dropdowns
+        const swapToCountyDropdown = createCustomDropdown(swapToCountySelect);
+        const swapToSubcountyDropdown = createCustomDropdown(swapToSubcountySelect);
+        const swapToWardDropdown = createCustomDropdown(swapToWardSelect);
+
+        // Check if custom dropdowns were successfully created
+        if (!swapToCountyDropdown || !swapToSubcountyDropdown || !swapToWardDropdown) {
+            console.error("Failed to create one or more custom dropdowns.");
+            return;
+        }
+        console.log('Custom dropdowns created successfully');
+
+
+        // Ensure initial IDs are correctly pulled from form.instance
+        const initialSwapToSubcountyId = "{{ form.instance.swap_to_subcounty.id|default_if_none:'' }}".trim();
+        const initialSwapToWardId = "{{ form.instance.swap_to_ward.id|default_if_none:'' }}".trim();
+
+        function loadSwapToSubcounties(selectedSubcountyId = null) {
+            const countyId = swapToCountySelect.value;
+            // Clear and reset the underlying select elements
+            swapToSubcountySelect.innerHTML = '<option value="">Select Desired Swap Sub-county</option>';
+            swapToWardSelect.innerHTML = '<option value="">Select Desired Swap Ward</option>';
+
+            if (countyId) {
+                console.log('Fetching subcounties for county ID:', countyId);
+                fetch(`/users/ajax/get-subcounties/?county_id=${countyId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            console.error('Error fetching subcounties:', data.error);
+                            return;
+                        }
+                        console.log('Subcounties fetched:', data.subcounties);
+                        data.subcounties.forEach(subcounty => {
+                            const option = document.createElement('option');
+                            option.value = subcounty.id;
+                            option.textContent = subcounty.name;
+                            swapToSubcountySelect.appendChild(option);
+                        });
+                        if (selectedSubcountyId) {
+                            swapToSubcountySelect.value = selectedSubcountyId;
+                            // Only load wards if a subcounty was actually selected
+                            if (swapToSubcountySelect.value) {
+                                loadSwapToWards(initialSwapToWardId);
+                            }
+                        }
+                        swapToSubcountyDropdown.update(); // Update the custom dropdown for subcounties
+                    })
+                    .catch(error => console.error('Error loading swap-to subcounties:', error));
+            } else {
+                // If no county selected, ensure dependent dropdowns are reset and updated
+                swapToSubcountyDropdown.update();
+                swapToWardDropdown.update();
+            }
+        }
+
+        function loadSwapToWards(selectedWardId = null) {
+            const subcountyId = swapToSubcountySelect.value;
+            // Clear and reset the underlying select element
+            swapToWardSelect.innerHTML = '<option value="">Select Desired Swap Ward</option>';
+
+            if (subcountyId) {
+                console.log('Fetching wards for subcounty ID:', subcountyId);
+                fetch(`/users/ajax/get-wards/?subcounty_id=${subcountyId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            console.error('Error fetching wards:', data.error);
+                            return;
+                        }
+                        console.log('Wards fetched:', data.wards);
+                        data.wards.forEach(ward => {
+                            const option = document.createElement('option');
+                            option.value = ward.id;
+                            option.textContent = ward.name;
+                            swapToWardSelect.appendChild(option);
+                        });
+                        if (selectedWardId) {
+                            swapToWardSelect.value = selectedWardId;
+                        }
+                        swapToWardDropdown.update(); // Update the custom dropdown for wards
+                    })
+                    .catch(error => console.error('Error loading swap-to wards:', error));
+            } else {
+                // If no subcounty selected, ensure dependent dropdown is reset and updated
+                swapToWardDropdown.update();
+            }
+        }
+
+        swapToCountySelect.addEventListener('change', () => {
+            console.log('Swap To County changed to:', swapToCountySelect.value);
+            loadSwapToSubcounties(null); // Pass null to indicate new selection, not initial load
+        });
+        swapToSubcountySelect.addEventListener('change', () => {
+            console.log('Swap To Subcounty changed to:', swapToSubcountySelect.value);
+            loadSwapToWards(null); // Pass null to indicate new selection, not initial load
+        });
+
+        // Initial load for swap-to location
+        // Only load if a county has an initial value
+        if (swapToCountySelect.value) {
+            console.log('Initial swap-to county value:', swapToCountySelect.value);
+            loadSwapToSubcounties(initialSwapToSubcountyId);
+            // If there's an initial subcounty, load wards as well
+            if (initialSwapToSubcountyId) {
+                loadSwapToWards(initialSwapToWardId);
+            }
+        } else {
+            // Ensure subcounty and ward dropdowns are initially empty/disabled if no county is selected
+            swapToSubcountyDropdown.update();
+            swapToWardDropdown.update();
+        }
+
+        // Debug form submission (already present in your code, keeping it)
+        const form = document.getElementById('step4-form');
+        form.addEventListener('submit', function(e) {
+            console.log('Form submission triggered for Step 4');
+            const formData = new FormData(form);
+            console.log('Form data:', Object.fromEntries(formData));
+        });
+    });
+</script>
+{% endblock extra_js %}

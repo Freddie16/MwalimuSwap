@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+
+{% block title %}Swap Request Details{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+{% endblock %}
+
+{% block content %}
+<div class="main-content p-6">
+    <div class="dashboard-card max-w-3xl mx-auto">
+        <h1 class="text-2xl font-semibold text-gray-800 mb-6 text-center">Swap Request Details</h1>
+
+        {% if messages %}
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} bg-{{ message.tags }}-100 border-l-4 border-{{ message.tags }}-500 text-{{ message.tags }}-700 p-4 mb-4 rounded-md" role="alert">
+                {{ message }}
+            </div>
+            {% endfor %}
+        {% endif %}
+
+        <div class="mb-6 border-b pb-4">
+            <h3 class="text-xl font-semibold text-gray-700 mb-3">Your Request (ID: {{ swap_request.id }})</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-gray-700">
+                <div>
+                    <p class="mb-2"><strong>Requested By:</strong> {{ swap_request.user.get_full_name|default:swap_request.user.username }}</p>
+                    <p class="mb-2"><strong>Status:</strong>
+                        <span class="px-2 inline-flex text-sm leading-5 font-semibold rounded-full 
+                            {% if swap_request.status == 'MATCH_FOUND' %}bg-orange-100 text-orange-800
+                            {% elif swap_request.status == 'COMPLETED' %}bg-green-100 text-green-800
+                            {% elif swap_request.status == 'PAYMENT_PENDING' %}bg-blue-100 text-blue-800
+                            {% elif swap_request.status == 'PENDING' or swap_request.status == 'AWAITING_MATCH' %}bg-yellow-100 text-yellow-800
+                            {% elif swap_request.status == 'REJECTED' or swap_request.status == 'CANCELLED_BY_USER' %}bg-red-100 text-red-800
+                            {% else %}bg-gray-100 text-gray-800{% endif %}">
+                            {{ swap_request.get_status_display }}
+                        </span>
+                    </p>
+                    <p class="mb-2"><strong>Created On:</strong> {{ swap_request.created_at|date:"M d, Y H:i" }}</p>
+                </div>
+                <div>
+                    <p class="mb-2"><strong>Desired County:</strong> {{ swap_request.desired_county.name|default:"N/A" }}</p>
+                    <p class="mb-2"><strong>Desired Sub-county:</strong> {{ swap_request.desired_subcounty.name|default:"N/A" }}</p>
+                    <p class="mb-2"><strong>Desired Ward:</strong> {{ swap_request.desired_ward.name|default:"N/A" }}</p>
+                </div>
+            </div>
+            <div class="mt-3">
+                <h4 class="text-md font-semibold text-gray-800 mb-1">Additional Notes:</h4>
+                <p class="bg-gray-50 p-3 rounded-md shadow-inner text-gray-800">
+                    {{ swap_request.notes|default:"No additional notes provided."|linebreaksbr }}
+                </p>
+            </div>
+        </div>
+
+        {% if swap_request.matched_with_request %}
+            <div class="mb-6">
+                <h3 class="text-xl font-semibold text-gray-700 mb-3">Matched Partner Information</h3>
+                {% if show_payment_prompt and payment_url %}
+                     <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 my-3 rounded-md">
+                        <p class="font-bold">Action Required to View Full Details!</p>
+                        <p>Pay KSh {{ settings.CONNECTION_PAYMENT_AMOUNT }} to view your matched partner's contact details.</p>
+                        <p class="mt-1">Your match is interested in swapping from/to: <strong>{{ swap_request.matched_with_request.desired_ward.name|default:swap_request.matched_with_request.desired_subcounty.name|default:swap_request.matched_with_request.desired_county.name|default:"N/A" }}</strong>.</p>
+                        <a href="{{ payment_url }}" class="btn btn-success mt-3">
+                            <i class="fas fa-credit-card mr-2"></i> Proceed to Payment
+                        </a>
+                    </div>
+                {% elif show_match_details and matched_partner_user and matched_partner_request %}
+                    <div class="bg-green-50 border-l-4 border-green-500 text-green-800 p-4 rounded-md">
+                        <h4 class="font-bold text-lg mb-2"><i class="fas fa-user-check mr-2"></i>Contact Details Unlocked!</h4>
+                        <p><strong>Name:</strong> {{ matched_partner_user.get_full_name|default:matched_partner_user.username }}</p>
+                        <p><strong>Email:</strong> <a href="mailto:{{ matched_partner_user.email }}" class="hover:underline">{{ matched_partner_user.email }}</a></p>
+                        <p><strong>Phone:</strong> {{ matched_partner_user.profile.phone_number|default:"Not provided" }}</p>
+                        <hr class="my-2">
+                        <p><strong>Partner's Current School:</strong> {{ matched_partner_user.profile.current_school_name|default:"Not provided" }}</p>
+                        <p><strong>Partner's Current County:</strong> {{ matched_partner_user.profile.current_county.name|default:"N/A" }}</p>
+                        <p><strong>Partner's Current Sub-County:</strong> {{ matched_partner_user.profile.current_subcounty.name|default:"N/A" }}</p>
+                        <p><strong>Partner's Current Ward:</strong> {{ matched_partner_user.profile.current_ward.name|default:"N/A" }}</p>
+                        <hr class="my-2">
+                        <p><strong>Partner's Desired County:</strong> {{ matched_partner_request.desired_county.name|default:"N/A" }}</p>
+                        <p><strong>Partner's Desired Sub-County:</strong> {{ matched_partner_request.desired_subcounty.name|default:"N/A" }}</p>
+                        <p><strong>Partner's Desired Ward:</strong> {{ matched_partner_request.desired_ward.name|default:"N/A" }}</p>
+                        <p class="mt-3">You can now contact them to discuss the swap further!</p>
+                    </div>
+                {% elif swap_request.status == 'PAYMENT_PENDING' %}
+                    <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-4 my-3 rounded-md">
+                        <p class="font-bold">Payment in Progress...</p>
+                        <p>We are currently processing your payment. Details will be revealed once confirmed.</p>
+                         <p><a href="{% url 'swaps:billing' %}" class="font-semibold underline">Check Billing History</a></p>
+                    </div>
+                {% else %}
+                    <div class="bg-gray-100 p-4 rounded-md text-center">
+                        <i class="fas fa-lock fa-2x text-gray-400 mb-2"></i>
+                        <p class="text-gray-600">Details of the matched partner are hidden until payment is completed.</p>
+                        <p class="text-sm text-gray-500">Your match is interested in swapping from/to: <strong>{{ swap_request.matched_with_request.desired_ward.name|default:swap_request.matched_with_request.desired_subcounty.name|default:swap_request.matched_with_request.desired_county.name|default:"N/A" }}</strong>.</p>
+                    </div>
+                {% endif %}
+            </div>
+        {% else %}
+            <div class="bg-gray-100 p-4 rounded-md text-center">
+                 <i class="fas fa-search fa-2x text-gray-400 mb-2"></i>
+                <p class="text-gray-600">This swap request is not yet matched with another teacher.</p>
+                {% if swap_request.status == 'AWAITING_MATCH' %}
+                <p class="text-sm text-gray-500">Our system is actively searching for a suitable match.</p>
+                {% endif %}
+            </div>
+        {% endif %}
+        
+        {% if swap_request.user == user %}
+        <div class="mt-8 text-center space-x-3">
+            <a href="{% url 'swaps:swap_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left mr-2"></i> Back to My Requests
+            </a>
+            {% if swap_request.status != 'COMPLETED' and swap_request.status != 'CANCELLED_BY_USER' and swap_request.status != 'REJECTED' and swap_request.status != 'EXPIRED' %}
+            <a href="{% url 'swaps:swap_request_update' swap_request.pk %}" class="btn btn-primary">
+                <i class="fas fa-edit mr-2"></i> Edit Request
+            </a>
+            <form method="post" action="{% url 'swaps:swap_request_delete' swap_request.pk %}" class="inline-block" onsubmit="return confirm('Are you sure you want to cancel this swap request?');">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash-alt mr-2"></i> Cancel Request
+                </button>
+            </form>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

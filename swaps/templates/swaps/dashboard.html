@@ -1,0 +1,236 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+<style>
+    /* Custom styles for better aesthetics */
+    body {
+        font-family: "Inter", sans-serif;
+        background-color: #f3f4f6; /* Light gray background */
+    }
+    .main-content {
+        padding: 1.5rem;
+    }
+    .dashboard-card {
+        background-color: #ffffff;
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    }
+    .dashboard-card.bg-gradient-to-br {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+    .btn:hover {
+        transform: translateY(-1px);
+    }
+    .btn-primary {
+        background-color: #6366f1; /* Indigo */
+        color: #ffffff;
+    }
+    .btn-primary:hover {
+        background-color: #4f46e5; /* Darker Indigo */
+    }
+    .btn-secondary {
+        background-color: #e5e7eb; /* Light gray */
+        color: #374151;
+    }
+    .btn-secondary:hover {
+        background-color: #d1d5db; /* Darker light gray */
+    }
+    .btn-danger {
+        background-color: #ef4444; /* Red */
+        color: #ffffff;
+    }
+    .btn-danger:hover {
+        background-color: #dc2626; /* Darker red */
+    }
+    .btn-success {
+        background-color: #10b981; /* Green */
+        color: #ffffff;
+    }
+    .btn-success:hover {
+        background-color: #059669; /* Darker green */
+    }
+    .btn-info {
+        background-color: #8b5cf6; /* Purple-600 */
+        color: #ffffff;
+    }
+    .btn-info:hover {
+        background-color: #7c3aed; /* Purple-700 */
+    }
+    .alert {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    .alert-yellow-100 {
+        background-color: #fffbeb;
+        border-left: 4px solid #f59e0b;
+        color: #92400e;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content p-6">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6">Welcome to Your Dashboard, {{ user.full_name|default:user.username }}!</h1>
+
+    {% if not user.is_profile_complete %}
+    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4 mb-6 rounded-md shadow-sm" role="alert">
+        <p class="font-bold">Profile Incomplete!</p>
+        <p>Please complete your <a href="{% url 'users:complete_profile_step1' %}" class="font-semibold underline hover:text-yellow-800">profile</a> to unlock all features and start swapping.</p>
+    </div>
+    {% endif %}
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="dashboard-card bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-6 flex flex-col items-center justify-center text-center">
+            <div class="text-5xl mb-3"><i class="fas fa-users"></i></div>
+            <h3 class="text-xl font-semibold mb-2">County Matches</h3>
+            <p class="text-4xl font-bold">{{ county_match_count }}</p>
+        </div>
+        <div class="dashboard-card bg-gradient-to-br from-green-500 to-teal-600 text-white p-6 flex flex-col items-center justify-center text-center">
+            <div class="text-5xl mb-3"><i class="fas fa-map-marked-alt"></i></div>
+            <h3 class="text-xl font-semibold mb-2">SubCounty Matches</h3>
+            <p class="text-4xl font-bold">{{ subcounty_match_count }}</p>
+        </div>
+        <div class="dashboard-card bg-gradient-to-br from-orange-500 to-red-600 text-white p-6 flex flex-col items-center justify-center text-center">
+            <div class="text-5xl mb-3"><i class="fas fa-map-pin"></i></div>
+            <h3 class="text-xl font-semibold mb-2">Ward Matches</h3>
+            <p class="text-4xl font-bold">{{ ward_match_count }}</p>
+        </div>
+        <div class="dashboard-card bg-gradient-to-br from-blue-500 to-cyan-600 text-white p-6 flex flex-col items-center justify-center text-center">
+            <div class="text-5xl mb-3"><i class="fas fa-random"></i></div>
+            <h3 class="text-xl font-semibold mb-2">Other Potential</h3>
+            <p class="text-4xl font-bold">{{ alternative_match_count }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="dashboard-card">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Your Current Swap Request</h2>
+            {% if user_swap_request %}
+                <div class="bg-gray-50 p-4 rounded-md shadow-inner">
+                    <p class="text-lg font-medium text-gray-700 mb-2">
+                        Desired Location:
+                        <span class="font-semibold text-indigo-700">
+                            {{ user_swap_request.desired_ward.name|default:user_swap_request.desired_subcounty.name|default:user_swap_request.desired_county.name|default:"N/A" }}
+                        </span>
+                    </p>
+                    <p class="text-gray-600 mb-2">Status: 
+                        <span class="font-semibold 
+                            {% if user_swap_request.status == 'MATCH_FOUND' %}text-orange-600
+                            {% elif user_swap_request.status == 'COMPLETED' %}text-green-600
+                            {% elif user_swap_request.status == 'PAYMENT_PENDING' %}text-blue-600
+                            {% else %}text-gray-700{% endif %}">
+                            {{ user_swap_request.get_status_display }}
+                        </span>
+                    </p>
+                    <p class="text-gray-600 mb-4">Notes: {{ user_swap_request.notes|default:"N/A" }}</p>
+                    
+                    {% if user_swap_request.status != 'COMPLETED' and user_swap_request.status != 'CANCELLED_BY_USER' and user_swap_request.status != 'REJECTED' and user_swap_request.status != 'EXPIRED' %}
+                    <div class="flex space-x-3 mt-3">
+                        <a href="{% url 'swaps:swap_request_update' user_swap_request.pk %}" class="btn btn-secondary btn-sm">Edit Request</a>
+                        <form method="post" action="{% url 'swaps:swap_request_delete' user_swap_request.pk %}" onsubmit="return confirm('Are you sure you want to cancel this swap request?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">Cancel Request</button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+            {% else %}
+                <p class="text-gray-600 mb-4">You don't have an active swap request yet.</p>
+                <a href="{% url 'swaps:swap_request_create' %}" class="btn btn-primary">Create New Swap Request</a>
+            {% endif %}
+        </div>
+
+        <div class="dashboard-card">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-4">Your Match Information</h2>
+            {% if potential_matches_info %}
+                {% for match_info in potential_matches_info %}
+                    <div class="bg-gray-50 p-4 rounded-md shadow-inner mb-4">
+                        <p class="text-gray-700">You are matched for your request (ID: {{ user_swap_request.id }}).</p>
+                        <p class="text-gray-700">Your matched partner is seeking a swap to: <strong class="text-indigo-700">{{ match_info.desired_location_of_match }}</strong>.</p>
+                        <p class="text-gray-600 mb-2">Your Request Status: 
+                            <span class="font-semibold 
+                                {% if user_swap_request.status == 'MATCH_FOUND' %}text-orange-600
+                                {% elif user_swap_request.status == 'COMPLETED' %}text-green-600
+                                {% elif user_swap_request.status == 'PAYMENT_PENDING' %}text-blue-600
+                                {% else %}text-gray-700{% endif %}">
+                                {{ match_info.status_of_your_request }}
+                            </span>
+                        </p>
+
+                        {% if match_info.payment_required %}
+                            <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-3 my-3 rounded-md">
+                                <p class="font-bold">Action Required!</p>
+                                <p>Pay KSh {{ settings.CONNECTION_PAYMENT_AMOUNT }} to view your matched partner's contact details.</p>
+                                <a href="{{ match_info.payment_url }}" class="btn btn-success mt-2">
+                                    <i class="fas fa-credit-card mr-2"></i> Proceed to Payment
+                                </a>
+                            </div>
+                        {% elif match_info.can_view_details and match_info.matched_user_details %}
+                            <div class="bg-green-50 border-l-4 border-green-500 text-green-700 p-3 my-3 rounded-md">
+                                <h4 class="font-bold text-lg">Contact Details Unlocked!</h4>
+                                <p><strong>Name:</strong> {{ match_info.matched_user_details.get_full_name|default:match_info.matched_user_details.username }}</p>
+                                <p><strong>Email:</strong> {{ match_info.matched_user_details.email }}</p>
+                                <p><strong>Phone:</strong> {{ match_info.matched_user_details.profile.phone_number|default:"Not provided" }}</p>
+                                <p><strong>Current School:</strong> {{ match_info.matched_user_details.profile.current_school_name|default:"Not provided" }}</p>
+                                <p><strong>Current County:</strong> {{ match_info.matched_user_details.profile.current_county.name|default:"N/A" }}</p>
+                                <p class="mt-2">You can now contact them to discuss the swap further!</p>
+                                {% if not match_info.other_party_paid %}
+                                <p class="text-sm text-yellow-700 mt-1">(Note: Your matched partner has not yet paid to view your details.)</p>
+                                {% else %}
+                                <p class="text-sm text-green-700 mt-1">(Your matched partner can also view your details.)</p>
+                                {% endif %}
+                                <a href="{% url 'swaps:swap_detail' match_info.matched_request_id %}" class="btn btn-info btn-sm mt-2">View Full Match Details</a>
+
+                            </div>
+                        {% elif user_swap_request.status == 'PAYMENT_PENDING' %}
+                             <div class="bg-blue-50 border-l-4 border-blue-500 text-blue-700 p-3 my-3 rounded-md">
+                                <p class="font-bold">Payment in Progress...</p>
+                                <p>We are currently processing your payment. Details will be revealed once confirmed.</p>
+                                <p><a href="{% url 'swaps:billing' %}" class="font-semibold underline">Check Billing History</a></p>
+                            </div>
+                        {% else %}
+                             <p class="text-gray-600 italic">Details will be available after successful payment.</p>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-gray-600 italic">No active matches found at the moment. Our system is continuously working to find suitable swaps for you.</p>
+                 {% if user_swap_request and user_swap_request.status == 'AWAITING_MATCH' %}
+                    <p class="text-gray-500 text-sm mt-2">Ensure your profile and swap preferences are up-to-date for better matching.</p>
+                 {% endif %}
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="dashboard-card mt-6">
+        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Smart Matching & AI Assistant</h2>
+        <p class="text-gray-600 mb-4">
+            Our AI assistant can help you find suitable matches and answer your questions.
+        </p>
+        <div class="text-center">
+            <a href="{% url 'ai_assistant:ai_assistant_chatbot' %}" class="btn btn-info inline-flex items-center">
+                <i class="fas fa-robot mr-2"></i> Chat with AI Assistant
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

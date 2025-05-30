@@ -1,0 +1,39 @@
+# .gitignore
+# Specifies intentionally untracked files that Git should ignore.
+
+# Environments
+.env
+venv/
+.vscode/ # Visual Studio Code settings
+
+# SQLite
+db.sqlite3
+*.sqlite3
+*.sqlite3-journal
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Media files (user uploads)
+media/
+
+# Collected static files (for deployment)
+staticfiles_collected/
+
+# IDE specific files
+.idea/ # PyCharm
+*.sublime-project
+*.sublime-workspace
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block title %}Payment Processing{% endblock %}
+{% block content %}
+<div class="main-content p-6">
+    <div class="dashboard-card max-w-md mx-auto text-center">
+        <h1 class="text-2xl font-semibold text-gray-800 mb-4">Payment Processing...</h1>
+        {% if payment.payment_method == 'MPESA' %}
+            <i class="fas fa-spinner fa-spin fa-3x text-blue-500 mb-4"></i>
+            <p class="text-gray-700 mb-3">Your M-Pesa payment is being processed.</p>
+            <p class="text-gray-600 bg-blue-50 p-3 rounded-md">{{ instruction_message|default:"Please check your phone to complete the transaction." }}</p>
+            <p class="text-sm text-gray-500 mt-3">This page will not update automatically. You will be notified once the payment is confirmed.</p>
+        {% elif payment.payment_method == 'PAYPAL' %}
+             <i class="fab fa-paypal fa-3x text-blue-600 mb-4"></i>
+            <p class="text-gray-700 mb-3">You have been redirected to PayPal.</p>
+            <p class="text-gray-600 bg-blue-50 p-3 rounded-md">Please complete your payment on the PayPal website. Once completed, PayPal will notify us.</p>
+        {% else %}
+            <p class="text-gray-700">Your payment is being processed.</p>
+        {% endif %}
+        <div class="mt-6">
+            <a href="{% url 'swaps:dashboard' %}" class="btn btn-secondary mr-2">Go to Dashboard</a>
+            <a href="{% url 'swaps:billing' %}" class="btn btn-outline-secondary">View Billing History</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

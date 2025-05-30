@@ -1,0 +1,61 @@
+/* Custom styles to complement Tailwind CSS */
+
+/* Sidebar */
+.sidebar {
+    transition: width 0.3s ease;
+}
+.sidebar-nav a {
+    display: flex;
+    align-items: center;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+}
+.sidebar-nav a:hover {
+    background-color: #4b5563;
+    transform: translateX(5px);
+}
+.sidebar-nav a.active {
+    background-color: #6d28d9;
+    box-shadow: 0 4px 8px rgba(109, 40, 217, 0.3);
+}
+.sidebar-nav a i {
+    margin-right: 0.75rem;
+}
+
+/* Dashboard Card */
+.dashboard-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+.dashboard-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Messages */
+.messages li {
+    padding: 1rem 1.5rem;
+    border-radius: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+.messages li.success {
+    background-color: #d1fae5;
+    border-left: 4px solid #10b981;
+}
+.messages li.info {
+    background-color: #e0f2fe;
+    border-left: 4px solid #3b82f6;
+}
+.messages li.warning {
+    background-color: #fffbeb;
+    border-left: 4px solid #f59e0b;
+}
+.messages li.error {
+    background-color: #fee2e2;
+    border-left: 4px solid #ef4444;
+}
+
+/* Form Select Multiple */
+select[multiple] {
+    height: 150px; /* Adjust height for better visibility */
+}

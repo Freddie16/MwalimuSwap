@@ -1,0 +1,53 @@
+{% load static %}
+
+<aside class="sidebar">
+    <div class="sidebar-header">MwalimuSwap
+        <a href="{% url 'home' %}" class="logo"></a>
+    </div>
+    <nav class="sidebar-nav">
+        <ul>
+            <li>
+                <a href="{% url 'dashboard' %}">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'swap_list' %}">
+                    <i class="fas fa-exchange-alt"></i>
+                    <span>Swaps</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'billing' %}">
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <span>Billing</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'user_settings' %}">
+                    <i class="fas fa-cog"></i>
+                    <span>Settings</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'ai_assistant_chatbot' %}">
+                    <i class="fas fa-robot"></i>
+                    <span>AI Chatbot</span>
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'ai_assistant_smart_matches' %}">
+                    <i class="fas fa-lightbulb"></i>
+                    <span>Smart Matches</span>
+                </a>
+            </li>
+        </ul>
+    </nav>
+    <div class="sidebar-footer">
+        <a href="{% url 'logout' %}">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Logout</span>
+        </a>
+    </div>
+</aside>

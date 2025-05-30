@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Create/Update Swap Request{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    /* Custom styles integrated with Tailwind */
+    body {
+        font-family: "Inter", sans-serif;
+        background-color: #f3f4f6; /* Light gray background */
+    }
+    .form-container {
+        background-color: #ffffff;
+        padding: 2.5rem;
+        border-radius: 0.75rem;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        max-width: 48rem; /* Equivalent to max-w-3xl */
+        margin: 2rem auto;
+    }
+    .form-control {
+        @apply border-gray-300 p-3 text-base;
+    }
+    .form-control:focus {
+        @apply border-indigo-500 ring-2 ring-indigo-200;
+    }
+    .btn-primary {
+        @apply bg-indigo-600 text-white px-6 py-3 rounded-md font-semibold transition-colors;
+    }
+    .btn-primary:hover {
+        @apply bg-indigo-700;
+    }
+    .alert {
+        @apply p-4 rounded-md mb-4;
+    }
+    .alert-success {
+        @apply bg-green-50 text-green-700 border-l-4 border-green-500;
+    }
+    .alert-error {
+        @apply bg-red-50 text-red-700 border-l-4 border-red-500;
+    }
+    .alert-info {
+        @apply bg-blue-50 text-blue-700 border-l-4 border-blue-500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content p-6 flex justify-center items-start min-h-screen">
+    <div class="form-container w-full lg:w-3/4 xl:w-2/3">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8 text-center">{{ form.instance.pk|yesno:"Update,Create New" }} Swap Request</h1>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} mb-4" role="alert">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            {{ form|crispy }}
+            <button type="submit" class="btn btn-primary w-full rounded-md mt-6">
+                {% if form.instance.pk %}Update Request{% else %}Submit Request{% endif %}
+            </button>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const countySelect = document.getElementById('id_desired_county');
+    const subcountySelect = document.getElementById('id_desired_subcounty');
+    const wardSelect = document.getElementById('id_desired_ward');
+
+    if (countySelect) {
+        // Pass initial values from Django to JavaScript variables
+        const initialCountyId = "{{ form.desired_county.value.id|default_if_none:'' }}";
+        const initialSubcountyId = "{{ form.desired_subcounty.value.id|default_if_none:'' }}";
+        const initialWardId = "{{ form.desired_ward.value.id|default_if_none:'' }}";
+
+        function loadSubcounties(countyId, selectedId = null) {
+            // Reset subcounty and ward
+            subcountySelect.innerHTML = '<option value="">Select a Sub-county</option>';
+            wardSelect.innerHTML = '<option value="">Select a Ward</option>';
+
+            if (countyId) {
+                fetch(`/swaps/ajax/get-subcounties/?county_id=${countyId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.subcounties.forEach(subcounty => {
+                            const option = document.createElement('option');
+                            option.value = subcounty.id;
+                            option.textContent = subcounty.name;
+                            subcountySelect.appendChild(option);
+                        });
+                        
+                        if (selectedId) {
+                            subcountySelect.value = selectedId;
+                            loadWards(selectedId, initialWardId);
+                        }
+                    })
+                    .catch(error => console.error('Error loading subcounties:', error));
+            }
+        }
+
+        function loadWards(subcountyId, selectedId = null) {
+            wardSelect.innerHTML = '<option value="">Select a Ward</option>';
+
+            if (subcountyId) {
+                fetch(`/swaps/ajax/get-wards/?subcounty_id=${subcountyId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        data.wards.forEach(ward => {
+                            const option = document.createElement('option');
+                            option.value = ward.id;
+                            option.textContent = ward.name;
+                            wardSelect.appendChild(option);
+                        });
+                        
+                        if (selectedId) {
+                            wardSelect.value = selectedId;
+                        }
+                    })
+                    .catch(error => console.error('Error loading wards:', error));
+            }
+        }
+
+        // Event listeners
+        countySelect.addEventListener('change', function() {
+            loadSubcounties(this.value);
+        });
+
+        subcountySelect.addEventListener('change', function() {
+            loadWards(this.value);
+        });
+
+        // On initial load, if there's a county selected, load its subcounties
+        if (initialCountyId) {
+            loadSubcounties(initialCountyId, initialSubcountyId);
+        } else if (countySelect.value) {
+            // Handle case where form is bound with data
+            loadSubcounties(countySelect.value, initialSubcountyId);
+        }
+    }
+});
+</script>
+{% endblock %}

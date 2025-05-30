@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block title %}Smart Matching Suggestions{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+    /* Custom styles for better aesthetics */
+    body {
+        font-family: "Inter", sans-serif;
+        background-color: #f3f4f6; /* Light gray background */
+    }
+    .main-content {
+        padding: 1.5rem;
+    }
+    .dashboard-card {
+        background-color: #ffffff;
+        padding: 1.5rem;
+        border-radius: 0.75rem;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+    }
+    .dashboard-card.bg-gradient-to-br {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+    }
+    .btn {
+        padding: 0.75rem 1.5rem;
+        border-radius: 0.5rem;
+        font-weight: 600;
+        transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+    .btn:hover {
+        transform: translateY(-1px);
+    }
+    .btn-primary {
+        background-color: #6366f1; /* Indigo */
+        color: #ffffff;
+    }
+    .btn-primary:hover {
+        background-color: #4f46e5; /* Darker Indigo */
+    }
+    .btn-secondary {
+        background-color: #e5e7eb; /* Light gray */
+        color: #374151;
+    }
+    .btn-secondary:hover {
+        background-color: #d1d5db; /* Darker light gray */
+    }
+    .btn-danger {
+        background-color: #ef4444; /* Red */
+        color: #ffffff;
+    }
+    .btn-danger:hover {
+        background-color: #dc2626; /* Darker red */
+    }
+    .btn-success {
+        background-color: #10b981; /* Green */
+        color: #ffffff;
+    }
+    .btn-success:hover {
+        background-color: #059669; /* Darker green */
+    }
+    .btn-info {
+        background-color: #8b5cf6; /* Purple-600 */
+        color: #ffffff;
+    }
+    .btn-info:hover {
+        background-color: #7c3aed; /* Purple-700 */
+    }
+    .alert {
+        padding: 1rem;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+    }
+    .alert-yellow-100 {
+        background-color: #fffbeb;
+        border-left: 4px solid #f59e0b;
+        color: #92400e;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="main-content p-6">
+    <h1 class="text-3xl font-bold text-gray-900 mb-6 text-center">Smart Matching Suggestions</h1>
+
+    <div class="dashboard-card">
+        {% if suggestions %}
+            <p class="text-gray-700 mb-6 text-center">
+                Here are potential swap opportunities identified by our AI assistant based on your profile and other teachers' requests.
+            </p>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {% for suggestion in suggestions %}
+                <div class="bg-white rounded-lg shadow-md p-6 border border-indigo-200 hover:shadow-lg transition duration-300">
+                    <h2 class="text-xl font-semibold text-indigo-700 mb-3">Match with {{ suggestion.other_teacher_username }}</h2>
+                    <p class="text-gray-700 mb-2"><strong>Current Location:</strong> {{ suggestion.other_teacher_current_location }}</p>
+                    <p class="text-gray-700 mb-2"><strong>Desired Location:</strong> {{ suggestion.other_teacher_desired_location }}</p>
+                    <p class="text-gray-700 mb-2"><strong>Compatibility Score:</strong>
+                        <span class="font-bold text-lg
+                            {% if suggestion.compatibility_score >= 80 %}text-green-600
+                            {% elif suggestion.compatibility_score >= 50 %}text-yellow-600
+                            {% else %}text-red-600
+                            {% endif %}">
+                            {{ suggestion.compatibility_score }}%
+                        </span>
+                    </p>
+                    <p class="text-gray-600 text-sm mb-4"><strong>Reason:</strong> {{ suggestion.reason }}</p>
+                    <div class="mt-auto text-center">
+                        <a href="#" class="btn btn-primary inline-flex items-center px-4 py-2 rounded-md shadow-sm hover:bg-indigo-600 transition duration-300">
+                            <i class="fas fa-user-circle mr-2"></i> {{ suggestion.suggested_action }}
+                        </a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center py-12">
+                <i class="fas fa-robot text-6xl text-gray-400 mb-4"></i>
+                <p class="text-gray-600 text-lg mb-4">No smart matching suggestions found at the moment.</p>
+                <p class="text-gray-500">Ensure your profile is complete and you have an active swap request.</p>
+                <div class="mt-6">
+                    <a href="{% url 'users:profile_detail_with_pk' user.pk %}" class="btn btn-secondary inline-flex items-center mr-4">
+                        <i class="fas fa-user-edit mr-2"></i> Complete Your Profile
+                    </a>
+                    <a href="{% url 'swaps:swap_request_create' %}" class="btn btn-primary inline-flex items-center">
+                        <i class="fas fa-plus-circle mr-2"></i> Create Swap Request
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

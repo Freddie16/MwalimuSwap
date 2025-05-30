@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+{% block title %}Log In{% endblock %}
+{% block content %}
+<div class="main-content p-6 flex items-center justify-center min-h-screen-minus-nav">
+<div class="dashboard-card max-w-md mx-auto p-8 text-center">
+<h2 class="text-3xl font-bold text-gray-800 mb-6">Log In</h2>
+<form method="post" class="space-y-4">
+{% csrf_token %}
+{{ form|crispy }}
+<button type="submit" class="btn btn-primary w-full rounded-md mt-4">
+<i class="fas fa-sign-in-alt mr-2"></i> Log In
+</button>
+</form>
+<p class="mt-6 text-sm text-gray-600">
+Don't have an account? <a href="{% url 'users:signup' %}" class="text-indigo-600
+hover:underline">Sign Up</a>
+</p>
+<p class="mt-2 text-sm text-gray-600">
+<a href="{% url 'password_reset' %}" class="text-indigo-600 hover:underline">Forgot
+password?</a>
+</p>
+</div>
+</div>
+{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet"
+href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+{% endblock extra_head %}

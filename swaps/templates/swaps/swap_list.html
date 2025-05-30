@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+{% block title %}My Swap Requests{% endblock %}
+{% block content %}
+<div class="main-content p-6">
+ <h1 class="text-3xl font-bold text-gray-900 mb-6">My Swap Requests</h1>
+ <div class="dashboard-card">
+ {% if swap_requests %}
+ <div class="overflow-x-auto">
+ <table class="min-w-full bg-white rounded-lg shadow-md">
+ <thead class="bg-gray-200">
+ <tr>
+ <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">SN</th>
+ <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Desired Location</th>
+ <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Status</th>
+ <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Created At</th>
+ <th class="py-3 px-4 text-left text-sm font-semibold text-gray-600 uppercase tracking-wider">Actions</th>
+ </tr>
+ </thead>
+ <tbody class="divide-y divide-gray-200">
+ {% for request in swap_requests %}
+ <tr class="hover:bg-gray-50">
+ <td class="py-3 px-4 whitespace-nowrap">{{ forloop.counter }}</td>
+ <td class="py-3 px-4 whitespace-nowrap">
+ {% if request.desired_ward %}{{ request.desired_ward.name }}, {% endif %}
+ {% if request.desired_subcounty %}{{ request.desired_subcounty.name }}, {% endif %} 
+ {% if request.desired_county %}{{ request.desired_county.name }}{% endif %}
+ </td>
+ <td class="py-3 px-4 whitespace-nowrap">
+    {% with status_class=request.status|default:"" %}
+        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+            {% if status_class == 'PENDING' %}bg-yellow-100 text-yellow-800
+            {% elif status_class == 'APPROVED' %}bg-green-100 text-green-800
+            {% elif status_class == 'REJECTED' %}bg-red-100 text-red-800
+            {% elif status_class == 'MATCHED' %}bg-blue-100 text-blue-800
+            {% elif status_class == 'COMPLETED' %}bg-purple-100 text-purple-800
+            {% elif status_class == 'CANCELLED' %}bg-gray-100 text-gray-800
+            {% else %}bg-gray-100 text-gray-800{% endif %}">
+            {{ request.get_status_display }}
+        </span>
+    {% endwith %}
+ </td>
+ <td class="py-3 px-4 whitespace-nowrap">{{ request.created_at|date:"M d, Y H:i" }}</td>
+ <td class="py-3 px-4 whitespace-nowrap">
+ <a href="{% url 'swaps:swap_detail' request.pk %}" class="text-indigo-600 hover:text-indigo-900 mr-3">View</a>
+ <a href="{% url 'swaps:swap_request_update' request.pk %}" class="text-blue-600 hover:text-blue-900 mr-3">Edit</a>
+ <a href="{% url 'swaps:swap_request_delete' request.pk %}" class="text-red-600 hover:text-red-900">Delete</a>
+ </td>
+ </tr>
+ {% endfor %}
+ </tbody>
+ </table>
+ </div>
+ {% if is_paginated %}
+ {% include 'partials/_pagination.html' %}
+ {% endif %} 
+ {% else %}
+ <p class="text-gray-600 text-center py-8">You have not created any swap requests yet.</p>
+ <div class="text-center">
+ <a href="{% url 'swaps:swap_request_create' %}" class="btn btn-primary inline-flex items-center">
+ <i class="fas fa-plus-circle mr-2"></i> Create New Swap Request
+ </a>
+ </div>
+ {% endif %}
+ </div>
+</div>
+{% endblock %}
+{% block extra_head %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+{% endblock %}
