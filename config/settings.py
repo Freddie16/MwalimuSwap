@@ -15,8 +15,7 @@ SECRET_KEY = config('SECRET_KEY')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool) # Example: DEBUG=False in .env for production
 
-ALLOWED_HOSTS = [] # Configure as needed for deployment, e.g., ['yourdomain.com', 'www.yourdomain.com']
-
+ALLOWED_HOSTS = ['mwalimuswap-1.onrender.com']
 
 # Application definition
 INSTALLED_APPS = [
