@@ -3,7 +3,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.core.validators import RegexValidator
-from swaps.models import County, SubCounty, Ward # Import location models
+#from swaps.models import County, SubCounty, Ward # Import location models
 
 class CustomUser(AbstractUser):
     """
@@ -36,44 +36,46 @@ class CustomUser(AbstractUser):
 
     # Current Location (Foreign Keys to location models)
     current_county = models.ForeignKey(
-        County,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='users_current_county'
-    )
+    'swaps.County',  # The 'to' model as a string
+    on_delete=models.SET_NULL,  # What to do if the related County is deleted
+    null=True,
+    blank=True,
+    related_name='current_users' # Optional: for reverse lookups
+)
     current_subcounty = models.ForeignKey(
-        SubCounty,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='users_current_subcounty'
-    )
+    'swaps.SubCounty',
+    on_delete=models.SET_NULL,
+    null=True,
+    blank=True,
+    related_name='current_users'
+)
+
     current_ward = models.ForeignKey(
-        Ward,
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name='users_current_ward'
-    )
+    'swaps.Ward',
+    on_delete=models.SET_NULL,
+    null=True,
+    blank=True,
+    related_name='current_users'
+)
+
 
     # Desired Swap To Location (Foreign Keys to location models)
     swap_to_county = models.ForeignKey(
-        County,
+        'swaps.County',  # Use string reference
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='users_swap_to_county'
     )
     swap_to_subcounty = models.ForeignKey(
-        SubCounty,
+        'swaps.SubCounty',  # Use string reference
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='users_swap_to_subcounty'
     )
     swap_to_ward = models.ForeignKey(
-        Ward,
+        'swaps.Ward',  # Use string reference
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
